@@ -154,7 +154,7 @@ typedef __m128 v4sf;
 /*
   ARM NEON support macros
 */
-#elif !defined(PFFFT_SIMD_DISABLE) && defined(__arm__)
+#elif !defined(PFFFT_SIMD_DISABLE) && (defined(__arm__) || defined (_M_ARM))
 #  include <arm_neon.h>
 typedef float32x4_t v4sf;
 #  define SIMD_SZ 4
@@ -173,8 +173,12 @@ typedef float32x4_t v4sf;
     float32x4x2_t u1_ = vzipq_f32(t0_.val[1], t1_.val[1]);              \
     x0 = u0_.val[0]; x1 = u0_.val[1]; x2 = u1_.val[0]; x3 = u1_.val[1]; \
   }
+#	if defined _M_ARM//MS
+#		define VTRANSPOSE4(x0,x1,x2,x3) VTRANSPOSE4_(x0,x1,x2,x3)
+#	else
 /* marginally faster version */
-#  define VTRANSPOSE4(x0,x1,x2,x3) { asm("vtrn.32 %q0, %q1;\n vtrn.32 %q2,%q3\n vswp %f0,%e2\n vswp %f1,%e3" : "+w"(x0), "+w"(x1), "+w"(x2), "+w"(x3)::); }
+#		define VTRANSPOSE4(x0,x1,x2,x3) { asm("vtrn.32 %q0, %q1;\n vtrn.32 %q2,%q3\n vswp %f0,%e2\n vswp %f1,%e3" : "+w"(x0), "+w"(x1), "+w"(x2), "+w"(x3)::); }
+#	endif//_M_ARM
 #  define VSWAPHL(a,b) vcombine_f32(vget_low_f32(b), vget_high_f32(a))
 #  define VALIGNED(ptr) ((((long)(ptr)) & 0x3) == 0)
 #else
